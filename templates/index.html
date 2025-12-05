@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureSnap Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-200 font-sans">
+  <!-- Navbar -->
+  <header class="bg-gray-900 shadow-lg p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-blue-400">🔐 SecureSnap Dashboard</h1>
+    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg">Logout</button>
+  </header>
+
+  <main class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Upload Card -->
+    <section class="bg-gray-800 rounded-2xl shadow p-6">
+      <h2 class="text-xl font-semibold mb-3 text-blue-300">📸 Upload Secure Photo</h2>
+      <form id="uploadForm" class="space-y-4">
+        <input type="file" id="photo" name="photo" class="block w-full text-sm text-gray-300 border border-gray-600 rounded-lg p-2 bg-gray-900"/>
+        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">Upload</button>
+      </form>
+      <p id="uploadMsg" class="mt-3 text-sm text-green-400"></p>
+    </section>
+
+    <!-- Payment Simulation -->
+    <section class="bg-gray-800 rounded-2xl shadow p-6">
+      <h2 class="text-xl font-semibold mb-3 text-yellow-300">💳 Secure Payment Simulation</h2>
+      <form id="paymentForm" class="space-y-4">
+        <input type="text" id="card_number" placeholder="Enter Card Number" class="block w-full text-sm border border-gray-600 rounded-lg p-2 bg-gray-900"/>
+        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-4 py-2 rounded-lg font-bold">Pay Securely</button>
+      </form>
+      <p id="paymentMsg" class="mt-3 text-sm text-green-400"></p>
+    </section>
+
+    <!-- Monitoring Panel -->
+    <section class="bg-gray-800 rounded-2xl shadow p-6 col-span-1 md:col-span-2">
+      <h2 class="text-xl font-semibold mb-3 text-red-300">🧠 System Monitoring</h2>
+      <button onclick="checkMonitor()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg">Check System Status</button>
+      <div id="monitorOutput" class="mt-3 p-3 bg-gray-900 rounded-lg text-sm text-gray-300"></div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      window.location.href = "/login";
+    }
+
+    // Upload
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const file = document.getElementById("photo").files[0];
+      const formData = new FormData();
+      formData.append("photo", file);
+
+      const res = await fetch(`${API_BASE}/upload`, {
+        method: "POST",
+        headers: { "x-access-token": token },
+        body: formData
+      });
+
+      const data = await res.json();
+      document.getElementById("uploadMsg").textContent = data.message || "Upload failed!";
+    });
+
+    // Payment
+    document.getElementById("paymentForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cardNumber = document.getElementById("card_number").value;
+
+      const res = await fetch(`${API_BASE}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card_number: cardNumber })
+      });
+
+      const data = await res.json();
+      document.getElementById("paymentMsg").textContent = `✅ ${data.message} | Token: ${data.transaction_token}`;
+    });
+
+    // Monitoring
+    async function checkMonitor() {
+      const res = await fetch(`${API_BASE}/monitor`);
+      const data = await res.json();
+      document.getElementById("monitorOutput").innerHTML = JSON.stringify(data, null, 2);
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+  </script>
+</body>
+</html>
